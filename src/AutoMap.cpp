@@ -34,6 +34,7 @@ AutoMap::pointOfInterest genPoint(int X, int Y, int L, int W)
 	return pointReturn;
 }
 
+
 void AutoMap::AutoMapInit(int robotLength, int robotWidth, DigitalSource * channelA, DigitalSource * channelB)
 {
 	fieldLength = 1646;
@@ -58,12 +59,13 @@ void AutoMap::AutoMapInit(int robotLength, int robotWidth, DigitalSource * chann
 
 void AutoMap::LoadInitialFieldState()
 {
-	pointOfInterest genPoint(int X, int Y, int L, int W);
-
 	std::ifstream Map;
 	//creates an ifstream object named "Map"
 	char streamBuffer[fieldArea];
 	Map.open("InitialFieldState.fs");
+
+	pointOfInterest genPoint(int X, int Y, int L, int W);
+
 	//opens the file
     if(Map.is_open()) //checks if map opened properly
     {
@@ -174,7 +176,7 @@ void AutoMap::LoadInitialFieldState()
     				objectCreateCounter = 0;
     				//if next is o, read it, if next is not, add field width to reader and check there
     				//if nothing found there, then finish creating object
-    				pointConverter = genPoint(collumnsCounted, rowsCounted, objectLength, objectWidth);
+    				pointConverter = genPoint(AutoMap::collumnsCounted, AutoMap::rowsCounted, AutoMap::objectLength, AutoMap::objectWidth);
     				Objectives[objectsStored].push_back(pointConverter);
     				Objectives[objectsStored].shrink_to_fit();
     			}
@@ -343,3 +345,4 @@ void FindPath(int xFind, int yFind)
 {
 
 }
+

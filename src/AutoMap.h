@@ -18,6 +18,7 @@
 class AutoMap
 {
 public:
+
 	Encoder * AMEncoderObj;
 
 	DigitalSource * channelA;
@@ -65,6 +66,7 @@ public:
 	bool yPosDetermined;
 
 
+	static pointOfInterest genPoint(int X, int Y, int L, int W);
 	int main();
 	//eliminate upon completion of the project
 	void MoveRobot(int time);
@@ -128,9 +130,6 @@ private:
 
 	int robotParseMechanizism = 0;
 	int robotParseSeeker;
-
-	int cHatesChildren;
-	const int fuckYou; //TODO change to not profane
 
 
 
