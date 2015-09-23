@@ -14,6 +14,12 @@
 //TODO get nathaniel to make file generator for c++ and java
 //TODO "create point function" (use enum to specify type)
 //TODO TODO add the ability to reference a point of interest by a name
+/*
+ * write to file using ofstream
+ * use commas as deliminating characters
+ * vector<char> ObjectReadBuffer;
+ * While(
+ */
 
 
 
@@ -60,6 +66,7 @@ void AutoMap::AutoMapInit(int robotLength, int robotWidth, DigitalSource * chann
 void AutoMap::LoadInitialFieldState()
 {
 	std::ifstream Map;
+	std::ofstream ObjectiveList;
 	//creates an ifstream object named "Map"
 	char streamBuffer[fieldArea];
 	Map.open("InitialFieldState.fs");
@@ -179,6 +186,8 @@ void AutoMap::LoadInitialFieldState()
     				pointConverter = genPoint(AutoMap::collumnsCounted, AutoMap::rowsCounted, AutoMap::objectLength, AutoMap::objectWidth);
     				Objectives[objectsStored].push_back(pointConverter);
     				Objectives[objectsStored].shrink_to_fit();
+    				ObjectiveList.open("Objectives.csv");
+    				//TODO TODO TODO write objectives to
     			}
     		}else if(parseBuffer[1] == 's'){
     				//STORES AS POI
@@ -302,47 +311,4 @@ void AutoMap::LoadInitialFieldState()
     Objectives.shrink_to_fit();
 }
 
-void AutoMap::setRobotPosition(int setX, int setY)
-{
-	robotPosition[1] = setX;
-	robotPosition[2] = setY;
-}
-
-void AutoMap::setRobotAngle(int setAngle)
-{
-	robotAngle = setAngle;
-}
-
-void AutoMap::MonitorPos()
-{
-	//TODO determine if turning based on encoder values
-	//TODO determine how much the robot turns
-	AMEncoderObj = new Encoder(channelA, channelB, false, Encoder::EncodingType::k1X);
-	//encoder starts counting
-	inchesTraveled = AMEncoderObj->GetDistance();
-	centimetersTraveled = 2.54 * inchesTraveled;
-	if (centimetersTraveled < 0)
-	{
-		centimetersTraveled = centimetersTraveled * -1;
-	}
-
-	rise = centimetersTraveled * cos(robotAngle);
-	run = centimetersTraveled * cos(robotAngle);
-
-	robotPosition[2] = robotPosition[2] + (centimetersTraveled * (rise/run));
-	robotPosition[1] = robotPosition[1] + (centimetersTraveled * (run/rise));
-
-	AMEncoderObj->Reset();
-	//monitors position and checks if robot is at action point every tick
-}
-
-void MoveRobotToPosition(int xPosMove, int yPosMove)
-{
-
-}
-
-void FindPath(int xFind, int yFind)
-{
-
-}
 

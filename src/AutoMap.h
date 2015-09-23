@@ -13,11 +13,13 @@
 #include <vector>
 #include <Encoder.h>
 #include <cmath>
-
+#include <PIDSource.h>
 
 class AutoMap
 {
 public:
+
+	PIDSource * AMPIDObj;
 
 	Encoder * AMEncoderObj;
 
@@ -65,6 +67,7 @@ public:
 	bool xPosDetermined;
 	bool yPosDetermined;
 
+	bool robotIsTurning;
 
 	static pointOfInterest genPoint(int X, int Y, int L, int W);
 	int main();
@@ -82,10 +85,13 @@ public:
 	void LoadInitialFieldState(); //Loads the initial robotPosition into a set of arrays
 	//MUST BE RUN OUTSIDE OF PERIODIC
 	//only usable once
-	/*
-	 * empty space defined as a 0
-	 * 1 where the robot's upper left corner would be
-	 */
+
+
+	bool checkTurn(); //checks if the robot turns
+	void moveTime(int time); //seconds
+	void turnTime(int time); //seconds
+	void turnAngle(int angle); //take a guess
+	void moveDistance(int dist); //centimeters
 	void setRobotPosition(int setX, int setY); //sets position of robot, usable any time
 	void setRobotAngle(int setAngle);
 	void MonitorPos(); //monitors position of robot
