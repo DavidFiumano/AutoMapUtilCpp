@@ -6,9 +6,6 @@
  */
 #include "AutoMap.h"
 //TODO define what each thing in the csv means
-//TODO make structs for objects and obstacles and parse the CSV to accomodate that
-//TODO reprogram errors in parser to delete structs and other values
-//TODO make solid points of interest/objectives they're own arrays
 //TODO path finding
 //TODO movement and moving on set paths
 //TODO get nathaniel to make file generator for c++ and java
@@ -61,12 +58,14 @@ void AutoMap::AutoMapInit(int robotLength, int robotWidth, DigitalSource * chann
 
 	pushGuard = false;
 
+	ObjectiveList.open("Objectives.csv"); //opens ObjectiveList
+
+	//TODO TODO TODO TODO OPEN OBJECTIVE FILE AND STORE IT IN VECTOR
 }
 
 void AutoMap::LoadInitialFieldState()
 {
 	std::ifstream Map;
-	std::ofstream ObjectiveList;
 	//creates an ifstream object named "Map"
 	char streamBuffer[fieldArea];
 	Map.open("InitialFieldState.fs");
@@ -85,13 +84,14 @@ void AutoMap::LoadInitialFieldState()
        	parseCounter = 0;
     	while(bufferParsed == false && parseError == false)
     	{
+    		rowsCounted = fieldLength;
     		Map.seekg(parseCounter);
     		collumnsCounted++;//adds to the xvalue that is counted at them momment
-    		if(parseCounter == fieldWidth)//sets the amount of horizontal rows counted
+    		if(parseCounter == fieldLength)//sets the amount of horizontal rows counted
     		{
-    			rowsCounted++; //adds to the yvalue that is counted at the momment
+    			rowsCounted--; //adds to the yvalue that is counted at the momment
     		}
-    		if(parseCounter == fieldLength)
+    		if(parseCounter == fieldWidth)//sets the amount of vertical collumns = to 0
     		{
     			collumnsCounted = 0;
     		}
@@ -104,7 +104,9 @@ void AutoMap::LoadInitialFieldState()
     			//blank space, do nothing
     		}else if(parseBuffer[1] == '='){
     			//TODO same for s
+    			barrierLength = 0;
     			barriersStored++;
+    			barrierLength++;
     			Map.seekg(parseCounter + 1);
     			Map.read(parseBuffer, parseControl);
     			if (parseBuffer[1] ==  '=')
@@ -115,6 +117,7 @@ void AutoMap::LoadInitialFieldState()
     				{
     					while(parseBuffer[1] == '=')
     					{
+    						Map.read(parseBuffer, 1);
     						barrierLength++;
     					}
     					Obstacles[barriersStored].push_back(collumnsCounted); //xPos
@@ -124,11 +127,14 @@ void AutoMap::LoadInitialFieldState()
     					Obstacles[barriersStored].push_back(rowsCounted - barrierLength);//yPos of end
     					Obstacles[barriersStored].shrink_to_fit();
     				}else if(parseBuffer[1] != '='){
+    					Map.seekg(parseCounter + barrierLength);
     					Obstacles[barriersStored].push_back(collumnsCounted);//xPos
     					Obstacles[barriersStored].push_back(rowsCounted);//yPos
         				while(parseBuffer[1] == '=')
         				{
-        				barrierLength++;
+        					Map.seekg(parseCounter + barrierLength);
+        					Map.read(parseBuffer, 1);
+        					barrierLength++;
         				}
         				Obstacles[barriersStored].push_back(barrierLength);//Length
         				Obstacles[barriersStored].push_back(collumnsCounted + barrierLength);//xPos
@@ -186,7 +192,6 @@ void AutoMap::LoadInitialFieldState()
     				pointConverter = genPoint(AutoMap::collumnsCounted, AutoMap::rowsCounted, AutoMap::objectLength, AutoMap::objectWidth);
     				Objectives[objectsStored].push_back(pointConverter);
     				Objectives[objectsStored].shrink_to_fit();
-    				ObjectiveList.open("Objectives.csv");
     				//TODO TODO TODO write objectives to
     			}
     		}else if(parseBuffer[1] == 's'){
@@ -216,6 +221,7 @@ void AutoMap::LoadInitialFieldState()
     			    pointConverter = genPoint(collumnsCounted, rowsCounted, objectLength, objectWidth);
     			    Objectives[objectsStored].push_back(pointConverter);
    			    //STORES AS BARRIER
+    			    barrierLength = 0;
     			    barriersStored++;
     			    Map.seekg(parseCounter + 1);
     			    Map.read(parseBuffer, parseControl);
@@ -227,6 +233,7 @@ void AutoMap::LoadInitialFieldState()
     			    	{
     			    		while(parseBuffer[1] == 's')
     			    		{
+    			    			Map.read(parseBuffer, 1);
     			    			barrierLength++;
     			    		}
     			    		Obstacles[barriersStored].push_back(collumnsCounted); //xPos
@@ -235,10 +242,12 @@ void AutoMap::LoadInitialFieldState()
     			    		Obstacles[barriersStored].push_back(collumnsCounted);//xPos of end
     			    		Obstacles[barriersStored].push_back(rowsCounted - barrierLength);//yPos of end
     			       		}else if(parseBuffer[1] != 's'){
+    			       			Map.seekg(parseCounter + barrierLength);
     			       			Obstacles[barriersStored].push_back(collumnsCounted);//xPos
     			       			Obstacles[barriersStored].push_back(rowsCounted);//yPos
     			       			while(parseBuffer[1] == 's')
     			       			{
+    			       				Map.read(parseBuffer, 1);
     			       				barrierLength++;
     			       			}
     			       			Obstacles[barriersStored].push_back(barrierLength);//Length
@@ -311,4 +320,75 @@ void AutoMap::LoadInitialFieldState()
     Objectives.shrink_to_fit();
 }
 
+void AutoMap::createObjective(char name[], int nameLength, int xPosOfUpperLeftCorner, int yPosOfUpperLeftCorner, int objectLength, int objectWidth, bool loadIntoFile, ObjectiveType objectiveType)
+{
+	pointOfInterest genPoint(int x, int y, int length, int width);
+	internalRegister = new char[nameLength];
+	internalRegister = name;
+	if(ObjectiveList.is_open() &&  loadIntoFile == true)
+	{
+		//TODO create file to keep track of this
+		ObjectiveList.seekp(ObjectiveList.end);
+		objectsStored++;
+		ObjectiveList.write(name, nameLength); //stores object name
+		ObjectiveList << ":"; //stores ':' to use later as delim
+		/*writeTranslator[1] = objectsStored; //can only store up to 255 objects
+		ObjectiveList.write(writeTranslator, 1);*/
+		ObjectiveList << objectsStored << std::endl;
+		newObjective = genPoint(xPosOfUpperLeftCorner, yPosOfUpperLeftCorner, objectLength, objectWidth);
+		Objectives[objectsStored].push_back(newObjective);
+		ObjectiveList.seekg(ObjectiveList.end);
+		objectiveListSize = ObjectiveList.tellg();
+		if(objectiveType == SOLID)
+		{
+			/* Length -> *
+			 * 			 *
+	Width->	 * 			 *
+			 * 			 *
+			 *	 	 	 */
+
+			//STORE TOP
+			barriersStored++;
+			Obstacles[barriersStored].push_back(xPosOfUpperLeftCorner);
+			Obstacles[barriersStored].push_back(yPosOfUpperLeftCorner);
+			Obstacles[barriersStored].push_back(objectLength);
+			Obstacles[barriersStored].push_back(xPosOfUpperLeftCorner + objectLength);
+			Obstacles[barriersStored].push_back(yPosOfUpperLeftCorner);
+			//STORE LEFT SIDE
+			barriersStored++;
+			Obstacles[barriersStored].push_back(xPosOfUpperLeftCorner);
+			Obstacles[barriersStored].push_back(yPosOfUpperLeftCorner);
+			Obstacles[barriersStored].push_back(objectWidth);
+			Obstacles[barriersStored].push_back(xPosOfUpperLeftCorner);
+			Obstacles[barriersStored].push_back(yPosOfUpperLeftCorner - objectWidth);
+			//STORE BOTTOM
+			barriersStored++;
+			Obstacles[barriersStored].push_back(xPosOfUpperLeftCorner);
+			Obstacles[barriersStored].push_back(yPosOfUpperLeftCorner - objectWidth);
+			Obstacles[barriersStored].push_back(objectLength);
+			Obstacles[barriersStored].push_back(xPosOfUpperLeftCorner + objectLength);
+			Obstacles[barriersStored].push_back(yPosOfUpperLeftCorner - objectWidth);
+			//STORE RIGHT SIDE
+			barriersStored++;
+			Obstacles[barriersStored].push_back(xPosOfUpperLeftCorner + objectLength);
+			Obstacles[barriersStored].push_back(yPosOfUpperLeftCorner);
+			Obstacles[barriersStored].push_back(objectWidth);
+			Obstacles[barriersStored].push_back(xPosOfUpperLeftCorner + objectLength);
+			Obstacles[barriersStored].push_back(yPosOfUpperLeftCorner - objectWidth);
+		}else{
+
+		}
+	}else if (loadIntoFile == true){
+		printf("For some reason the ObjectiveList didn't open. Is it open in some other program? \n");
+		printf("Objective not created. Sorry, I tried. \n");
+	}else{
+		newObjective = genPoint(xPosOfUpperLeftCorner, yPosOfUpperLeftCorner, objectLength, objectWidth);
+		Objectives[objectsStored].push_back(newObjective);
+	}
+}
+
+void AutoMap::FindPoint(std::string name)
+{
+
+}
 

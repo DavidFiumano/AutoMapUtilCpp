@@ -19,6 +19,8 @@ class AutoMap
 {
 public:
 
+	enum ObjectiveType {SOLID, ZONE};
+
 	PIDSource * AMPIDObj;
 
 	Encoder * AMEncoderObj;
@@ -38,6 +40,7 @@ public:
 		};
 
 
+	std::fstream ObjectiveList;
 
 	pointOfInterest pointConverter;
 
@@ -45,7 +48,7 @@ public:
 	//TODO, replace with array template classes
 	std::vector<std::vector<pointOfInterest>> Objectives;
 	std::vector<std::vector<int>> Obstacles;
-	std::vector<std::vector<int>>::iterator iHateTheCompiler; //hey, it's true
+	std::vector<std::vector<std::string>> ObjectiveRegister;
 
 	long int fieldLength;
 	long int fieldWidth;
@@ -64,12 +67,14 @@ public:
 	int setAngle;
 	int objectsStored;
 
+	pointOfInterest newObjective;
+
+
 	bool xPosDetermined;
 	bool yPosDetermined;
 
 	bool robotIsTurning;
 
-	static pointOfInterest genPoint(int X, int Y, int L, int W);
 	int main();
 	//eliminate upon completion of the project
 	void MoveRobot(int time);
@@ -86,7 +91,7 @@ public:
 	//MUST BE RUN OUTSIDE OF PERIODIC
 	//only usable once
 
-
+	void createObjective(char name[], int nameLength, int xPosOfUpperLeftCorner, int yPosOfUpperLeftCorner, int objectLength, int objectWidth, bool loadIntoFile, ObjectiveType); //must be called outside of periodic
 	bool checkTurn(); //checks if the robot turns
 	void moveTime(int time); //seconds
 	void turnTime(int time); //seconds
@@ -95,10 +100,13 @@ public:
 	void setRobotPosition(int setX, int setY); //sets position of robot, usable any time
 	void setRobotAngle(int setAngle);
 	void MonitorPos(); //monitors position of robot
+	void FindPoint(std::string name);
 	int GetPos(); //returns position of robot in x,y coordinates
 
 	int inchesTraveled;
 	int centimetersTraveled;
+
+	char * internalRegister;
 
 
 
@@ -131,16 +139,18 @@ private:
 	long int parseControl;
 
 	char parseBuffer[1];
+	char writeTranslator[1];
 
 	int barriersStored;
 
 	int robotParseMechanizism = 0;
 	int robotParseSeeker;
 
+	int objectiveListSize;
 
 
 
-	void streamBufferParser();
+	static pointOfInterest genPoint(int X, int Y, int L, int W);
 };
 
 #endif /* AUTOMAP_H_ */
