@@ -91,6 +91,7 @@ public:
 	//MUST BE RUN OUTSIDE OF PERIODIC
 	//only usable once
 
+
 	void createObjective(char name[], int nameLength, int xPosOfUpperLeftCorner, int yPosOfUpperLeftCorner, int objectLength, int objectWidth, bool loadIntoFile, ObjectiveType); //must be called outside of periodic
 	bool checkTurn(); //checks if the robot turns
 	void moveTime(int time); //seconds
@@ -119,6 +120,7 @@ private:
 	bool parseError;
 	bool objectParsed;
 
+	int lineCount = 0;
 	int checkControl;
 	int barrierCheck[2];
 	int barrierLength;
@@ -147,6 +149,8 @@ private:
 	int robotParseSeeker;
 
 	int objectiveListSize;
+
+	std::string line;
 
 
 

@@ -334,7 +334,7 @@ void AutoMap::createObjective(char name[], int nameLength, int xPosOfUpperLeftCo
 		ObjectiveList << ":"; //stores ':' to use later as delim
 		/*writeTranslator[1] = objectsStored; //can only store up to 255 objects
 		ObjectiveList.write(writeTranslator, 1);*/
-		ObjectiveList << objectsStored << std::endl;
+		ObjectiveList << objectsStored << ";" << std::endl;
 		newObjective = genPoint(xPosOfUpperLeftCorner, yPosOfUpperLeftCorner, objectLength, objectWidth);
 		Objectives[objectsStored].push_back(newObjective);
 		ObjectiveList.seekg(ObjectiveList.end);
@@ -376,19 +376,23 @@ void AutoMap::createObjective(char name[], int nameLength, int xPosOfUpperLeftCo
 			Obstacles[barriersStored].push_back(xPosOfUpperLeftCorner + objectLength);
 			Obstacles[barriersStored].push_back(yPosOfUpperLeftCorner - objectWidth);
 		}else{
+			objectsStored++;
 
 		}
 	}else if (loadIntoFile == true){
 		printf("For some reason the ObjectiveList didn't open. Is it open in some other program? \n");
 		printf("Objective not created. Sorry, I tried. \n");
-	}else{
+	}else if (loadIntoFile == false){
 		newObjective = genPoint(xPosOfUpperLeftCorner, yPosOfUpperLeftCorner, objectLength, objectWidth);
 		Objectives[objectsStored].push_back(newObjective);
+	}else{
+		printf("Not sure exactly what happened, but it was an error!");
 	}
 }
 
 void AutoMap::FindPoint(std::string name)
 {
+
 
 }
 
