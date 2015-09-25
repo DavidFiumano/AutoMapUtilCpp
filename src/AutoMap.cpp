@@ -10,6 +10,7 @@
 //TODO get nathaniel to make file generator for c++ and java
 //TODO TODO move class (closed loop control based)
 //TODO TODO wrappers for move class
+//TODO TODO TODO change anything that is stored as an open vector to a struct
 /*
  * write to file using ofstream
  * use commas as deliminating characters
