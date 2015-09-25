@@ -5,12 +5,11 @@
  *      Author: david
  */
 #include "AutoMap.h"
-//TODO define what each thing in the csv means
 //TODO path finding
 //TODO movement and moving on set paths
 //TODO get nathaniel to make file generator for c++ and java
-//TODO "create point function" (use enum to specify type)
-//TODO TODO add the ability to reference a point of interest by a name
+//TODO TODO move class (closed loop control based)
+//TODO TODO wrappers for move class
 /*
  * write to file using ofstream
  * use commas as deliminating characters
@@ -73,7 +72,6 @@ void AutoMap::AutoMapInit(int robotLength, int robotWidth, DigitalSource * chann
 	while(lineCounter != 0)
 	{
 		getline(ObjectiveList, newRegisterName, ':');
-		//TODO alter parser to make the registername on the line above the address
 		getline(ObjectiveList, newRegisterAddress);
 		if(lineCounter != lines)//if this has been run before
 		{
@@ -86,10 +84,13 @@ void AutoMap::AutoMapInit(int robotLength, int robotWidth, DigitalSource * chann
 		}
 		lineCounter--;
 	}
-	//TODO TODO TODO TODO OPEN OBJECTIVE FILE AND STORE IT IN VECTOR
-
-
-
+	lineCounter = lines;
+	while(lineCounter > 0)
+	{
+		ObjectiveRegister[lineCounter].objectiveName.shrink_to_fit();
+		lineCounter--;
+	}
+	ObjectiveRegister.shrink_to_fit();
 }
 
 void AutoMap::LoadInitialFieldState()
@@ -132,7 +133,6 @@ void AutoMap::LoadInitialFieldState()
 
     			//blank space, do nothing
     		}else if(parseBuffer[1] == '='){
-    			//TODO same for s
     			barrierLength = 0;
     			barriersStored++;
     			barrierLength++;
@@ -190,7 +190,6 @@ void AutoMap::LoadInitialFieldState()
 
     			//1st val is xPos, 2nd is yPos, 3rd is length, 4th is width
     			objectParsed = false; //used for parsing operations requiring a while loop
-    			//TODO TODO fix
     			while(objectParsed == false)
     			{
     				//create vector
@@ -221,7 +220,6 @@ void AutoMap::LoadInitialFieldState()
     				pointConverter = genPoint(AutoMap::collumnsCounted, AutoMap::rowsCounted, AutoMap::objectLength, AutoMap::objectWidth);
     				Objectives[objectsStored].push_back(pointConverter);
     				Objectives[objectsStored].shrink_to_fit();
-    				//TODO TODO TODO write objectives to
     			}
     		}else if(parseBuffer[1] == 's'){
     				//STORES AS POI
@@ -327,7 +325,6 @@ void AutoMap::LoadInitialFieldState()
     		}else{
     				printf(".fs enountered an unknown character, has the .fs been altered or corrupted? \n");
     				printf("Recreate .fs \n");
-    				//TODO delete vectors
     				Obstacles.clear();
     				Objectives.clear();
 
@@ -366,7 +363,6 @@ void AutoMap::createObjective(std::string name, int nameLength, int xPosOfUpperL
 	pointOfInterest genPoint(int x, int y, int length, int width);
 	if(ObjectiveList.is_open() &&  loadIntoFile == true)
 	{
-		//TODO create file to keep track of this
 		ObjectiveList.seekp(ObjectiveList.end);
 		objectsStored++;
 		//stores object name
@@ -447,7 +443,6 @@ void AutoMap::createObjective(std::string name, int nameLength, int xPosOfUpperL
 int AutoMap::FindPoint(std::string name)
 {
 	objectiveFind = objectsStored;
-	name.push_back(':');
 	while(objectiveFind != 0)
 	{
 		if(ObjectiveRegister[objectiveFind].objectiveName == name)
