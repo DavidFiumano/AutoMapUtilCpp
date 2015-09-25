@@ -58,9 +58,38 @@ void AutoMap::AutoMapInit(int robotLength, int robotWidth, DigitalSource * chann
 
 	pushGuard = false;
 
-	ObjectiveList.open("Objectives.csv"); //opens ObjectiveList
+	ObjectiveList.open("Objectives.txt"); //opens ObjectiveList
 
+	while(getline(ObjectiveList, buffer))
+	{
+		lines++;
+	}
+
+	buffer.clear();
+	buffer.shrink_to_fit();
+
+	int lineCounter = lines;
+
+	while(lineCounter != 0)
+	{
+		getline(ObjectiveList, newRegisterName, ':');
+		//TODO alter parser to make the registername on the line above the address
+		getline(ObjectiveList, newRegisterAddress);
+		if(lineCounter != lines)//if this has been run before
+		{
+			ObjectiveRegister[lineCounter].memoryPosition = atoi(newRegisterAddress.c_str());
+			ObjectiveRegister[lineCounter].objectiveName = newRegisterName;
+		}else{
+			newRegister.objectiveName = newRegisterName;
+			newRegister.memoryPosition = atoi(newRegisterAddress.c_str());
+			ObjectiveRegister.push_back(newRegister);
+		}
+		lineCounter--;
+	}
 	//TODO TODO TODO TODO OPEN OBJECTIVE FILE AND STORE IT IN VECTOR
+
+
+
 }
 
 void AutoMap::LoadInitialFieldState()
@@ -316,25 +345,35 @@ void AutoMap::LoadInitialFieldState()
     	Objectives.clear();
     }
     Map.close();
+    int counter = 0;
+    while(counter <= barriersStored)
+    {
+    	Obstacles[counter].shrink_to_fit();
+    	counter--;
+    }
     Obstacles.shrink_to_fit();
+    counter = objectsStored;
+    while(counter <= objectsStored)
+    {
+    	Objectives[counter].shrink_to_fit();
+    	counter--;
+    }
     Objectives.shrink_to_fit();
 }
 
-void AutoMap::createObjective(char name[], int nameLength, int xPosOfUpperLeftCorner, int yPosOfUpperLeftCorner, int objectLength, int objectWidth, bool loadIntoFile, ObjectiveType objectiveType)
+void AutoMap::createObjective(std::string name, int nameLength, int xPosOfUpperLeftCorner, int yPosOfUpperLeftCorner, int objectLength, int objectWidth, bool loadIntoFile, ObjectiveType objectiveType)
 {
 	pointOfInterest genPoint(int x, int y, int length, int width);
-	internalRegister = new char[nameLength];
-	internalRegister = name;
 	if(ObjectiveList.is_open() &&  loadIntoFile == true)
 	{
 		//TODO create file to keep track of this
 		ObjectiveList.seekp(ObjectiveList.end);
 		objectsStored++;
-		ObjectiveList.write(name, nameLength); //stores object name
-		ObjectiveList << ":"; //stores ':' to use later as delim
+		//stores object name
+		ObjectiveList << name << "\n" << objectsStored << "\n";
 		/*writeTranslator[1] = objectsStored; //can only store up to 255 objects
 		ObjectiveList.write(writeTranslator, 1);*/
-		ObjectiveList << objectsStored << ";" << std::endl;
+		ObjectiveRegister[objectsStored].objectiveName.assign(name);
 		newObjective = genPoint(xPosOfUpperLeftCorner, yPosOfUpperLeftCorner, objectLength, objectWidth);
 		Objectives[objectsStored].push_back(newObjective);
 		ObjectiveList.seekg(ObjectiveList.end);
@@ -388,11 +427,37 @@ void AutoMap::createObjective(char name[], int nameLength, int xPosOfUpperLeftCo
 	}else{
 		printf("Not sure exactly what happened, but it was an error!");
 	}
+    int counter = 0;
+    while(counter <= barriersStored)
+    {
+    	Obstacles[counter].shrink_to_fit();
+    	counter--;
+    }
+    Obstacles.shrink_to_fit();
+    counter = objectsStored;
+    while(counter <= objectsStored)
+    {
+    	Objectives[counter].shrink_to_fit();
+    	counter--;
+    }
+    Objectives.shrink_to_fit();
+    ObjectiveRegister.shrink_to_fit();
 }
 
-void AutoMap::FindPoint(std::string name)
+int AutoMap::FindPoint(std::string name)
 {
-
-
+	objectiveFind = objectsStored;
+	name.push_back(':');
+	while(objectiveFind != 0)
+	{
+		if(ObjectiveRegister[objectiveFind].objectiveName == name)
+		{
+			return ObjectiveRegister[objectiveFind].memoryPosition;
+			objectiveFind = 0;
+		}else{
+		objectiveFind--;
+		return 0;
+		}
+	}
 }
 

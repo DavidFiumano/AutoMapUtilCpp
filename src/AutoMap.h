@@ -39,6 +39,12 @@ public:
 			int widthOfZone;
 		};
 
+	struct objectiveRegister
+	{
+		std::string objectiveName;
+		int memoryPosition;
+	};
+
 
 	std::fstream ObjectiveList;
 
@@ -48,7 +54,7 @@ public:
 	//TODO, replace with array template classes
 	std::vector<std::vector<pointOfInterest>> Objectives;
 	std::vector<std::vector<int>> Obstacles;
-	std::vector<std::vector<std::string>> ObjectiveRegister;
+	std::vector<objectiveRegister> ObjectiveRegister;
 
 	long int fieldLength;
 	long int fieldWidth;
@@ -92,7 +98,7 @@ public:
 	//only usable once
 
 
-	void createObjective(char name[], int nameLength, int xPosOfUpperLeftCorner, int yPosOfUpperLeftCorner, int objectLength, int objectWidth, bool loadIntoFile, ObjectiveType); //must be called outside of periodic
+	void createObjective(std::string name, int nameLength, int xPosOfUpperLeftCorner, int yPosOfUpperLeftCorner, int objectLength, int objectWidth, bool loadIntoFile, ObjectiveType); //must be called outside of periodic
 	bool checkTurn(); //checks if the robot turns
 	void moveTime(int time); //seconds
 	void turnTime(int time); //seconds
@@ -101,7 +107,7 @@ public:
 	void setRobotPosition(int setX, int setY); //sets position of robot, usable any time
 	void setRobotAngle(int setAngle);
 	void MonitorPos(); //monitors position of robot
-	void FindPoint(std::string name);
+	int FindPoint(std::string name);
 	int GetPos(); //returns position of robot in x,y coordinates
 
 	int inchesTraveled;
@@ -116,9 +122,15 @@ private:
 	float rise;
 	float run;
 
+	objectiveRegister newRegister;
+
+	std::string newRegisterName;
+	std::string newRegisterAddress;
+
 	bool bufferParsed;
 	bool parseError;
 	bool objectParsed;
+
 
 	int lineCount = 0;
 	int checkControl;
@@ -150,9 +162,10 @@ private:
 
 	int objectiveListSize;
 
-	std::string line;
+	int objectiveFind;
+	int lines = 0;
 
-
+	std::string buffer;
 
 	static pointOfInterest genPoint(int X, int Y, int L, int W);
 };
