@@ -20,6 +20,8 @@ class AutoMap
 {
 public:
 
+
+
 	enum ObjectiveType {SOLID, ZONE};
 	enum slope{HORIZONTAL, UNDEFINED, OTHER};
 
@@ -32,6 +34,13 @@ public:
 
 	uint32_t analogChannelA;
 	uint32_t analogChannelB;
+
+	struct guard
+	{
+		int x;
+		int y;
+		int skipLength;
+	};
 
 	struct objective
 	{
@@ -214,9 +223,18 @@ private:
 	int lines = 0;
 
 	std::string buffer;
+	std::string id;
 
+	guard guardCreate;
 
-	pointOfInterest genPoint(int X, int Y, int L, int W, int nameString);
+	std::vector<guard> Guards;
+
+	int guardCounter;
+	int guards;
+	int guardCheck;
+
+	pointOfInterest genPoint(int X, int Y, int L, int W, std::string nameString);
+	void createGuard(int x, int y, int length, int width);
 };
 
 #endif /* AUTOMAP_H_ */

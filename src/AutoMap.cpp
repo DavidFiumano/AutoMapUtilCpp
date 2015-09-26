@@ -43,39 +43,6 @@ void AutoMap::AutoMapInit(int robotLength, int robotWidth, DigitalSource * chann
 	pushGuard = false;
 
 	ObjectiveList.open("Objectives.txt"); //opens ObjectiveList
-
-	while(getline(ObjectiveList, buffer))
-	{
-		lines++;
-	}
-
-	buffer.clear();
-	buffer.shrink_to_fit();
-
-	int lineCounter = lines;
-
-	while(lineCounter != 0)
-	{
-		getline(ObjectiveList, newRegisterName, ':');
-		getline(ObjectiveList, newRegisterAddress);
-		if(lineCounter != lines)//if this has been run before
-		{
-			ObjectiveRegister[lineCounter].memoryPosition = atoi(newRegisterAddress.c_str());
-			ObjectiveRegister[lineCounter].objectiveName = newRegisterName;
-		}else{
-			newRegister.objectiveName = newRegisterName;
-			newRegister.memoryPosition = atoi(newRegisterAddress.c_str());
-			ObjectiveRegister.push_back(newRegister);
-		}
-		lineCounter--;
-	}
-	lineCounter = lines;
-	while(lineCounter > 0)
-	{
-		ObjectiveRegister[lineCounter].objectiveName.shrink_to_fit();
-		lineCounter--;
-	}
-	ObjectiveRegister.shrink_to_fit();
 }
 
 void AutoMap::LoadInitialFieldState()
@@ -168,9 +135,19 @@ void AutoMap::LoadInitialFieldState()
     			//non-solid point of interest (go inside it)
     			//used for zones going
     			objectCreateCounter = Map.tellg();
-
+    			guardCheck = guards;
+    			objectParsed = false;
+    			while(guardCheck != 0)
+    			{
+    				if(Guards[guardCheck].x == collumnsCounted && Guards[guardCheck].y == rowsCounted)
+    				{
+    					parseCounter = parseCounter + Guards[guardCheck].skipLength;
+    					objectParsed = true;
+    				}
+    			}
     			//1st val is xPos, 2nd is yPos, 3rd is length, 4th is width
-    			objectParsed = false; //used for parsing operations requiring a while loop
+    			//used for parsing operations requiring a while loop
+
     			while(objectParsed == false)
     			{
     				//create vector
@@ -198,13 +175,22 @@ void AutoMap::LoadInitialFieldState()
     				objectCreateCounter = 0;
     				//if next is o, read it, if next is not, add field width to reader and check there
     				//if nothing found there, then finish creating object
-    				pointConverter = AutoMap::genPoint(collumnsCounted, rowsCounted, objectLength, objectWidth, objectsStored);
+    				id = std::to_string(objectsStored);
+    				pointConverter = AutoMap::genPoint(collumnsCounted, rowsCounted, objectLength, objectWidth, id);
     				Objectives.push_back(pointConverter);
     				Objectives.shrink_to_fit();
     			}
     		}else if(parseBuffer[1] == 's'){
     				//STORES AS POI
-
+    				objectParsed = false;
+    				while(guardCheck != 0)
+    				{
+    					if(Guards[guardCheck].x == collumnsCounted && Guards[guardCheck].y == rowsCounted)
+    					{
+    						parseCounter = parseCounter + Guards[guardCheck].skipLength;
+    						objectParsed = true;
+    					}
+    				}
     				objectCreateCounter++;
     				Map.seekg(objectCreateCounter); //sets position to next character to read
     				Map.read(parseBuffer, parseControl);
@@ -226,7 +212,8 @@ void AutoMap::LoadInitialFieldState()
     			    	}
     			    }
     			    objectCreateCounter = 0;
-    			    Objectives.push_back(AutoMap::genPoint(collumnsCounted, rowsCounted, objectLength, objectWidth, objectsStored));
+    			    id = std::to_string(objectsStored);
+    			    Objectives.push_back(AutoMap::genPoint(collumnsCounted, rowsCounted, objectLength, objectWidth, id));
    			    //STORES AS BARRIER
     			    Obstacles.push_back(AutoMap::createObstacle(collumnsCounted, rowsCounted, objectLength, collumnsCounted + objectLength, rowsCounted, HORIZONTAL)); //creates top line
     			    Obstacles.push_back(AutoMap::createObstacle(collumnsCounted, rowsCounted, objectWidth, collumnsCounted, rowsCounted - objectWidth, UNDEFINED)); //creats left line
@@ -298,7 +285,6 @@ void AutoMap::LoadInitialFieldState()
 
 void AutoMap::createObjective(std::string name, int nameLength, int xPosOfUpperLeftCorner, int yPosOfUpperLeftCorner, int objectLength, int objectWidth, bool loadIntoFile, ObjectiveType objectiveType)
 {
-	pointOfInterest genPoint(int x, int y, int length, int width);
 	if(ObjectiveList.is_open() &&  loadIntoFile == true)
 	{
 		ObjectiveList.seekp(ObjectiveList.end);
@@ -308,9 +294,7 @@ void AutoMap::createObjective(std::string name, int nameLength, int xPosOfUpperL
 		ObjectiveList << xPosOfUpperLeftCorner << "\n" << yPosOfUpperLeftCorner << "\n" << objectLength << "\n" << objectWidth << "\n";
 		/*writeTranslator[1] = objectsStored; //can only store up to 255 objects
 		ObjectiveList.write(writeTranslator, 1);*/
-		ObjectiveRegister[objectsStored].objectiveName.assign(name);
-		newObjective = AutoMap::genPoint(xPosOfUpperLeftCorner, yPosOfUpperLeftCorner, objectLength, objectWidth, objectsStored);
-		Objectives.push_back(newObjective);
+		Objectives.push_back(AutoMap::genPoint(collumnsCounted, rowsCounted, objectLength, objectWidth, name));
 		ObjectiveList.seekg(ObjectiveList.end);
 		objectiveListSize = ObjectiveList.tellg();
 		//STORE AS OBSTACLE
@@ -333,14 +317,14 @@ void AutoMap::createObjective(std::string name, int nameLength, int xPosOfUpperL
 		printf("For some reason the ObjectiveList didn't open. Is it open in some other program? \n");
 		printf("Objective not created. Sorry, I tried. \n");
 	}else if (ObjectiveList.is_open() && loadIntoFile == false){
-		newObjective = AutoMap::genPoint(xPosOfUpperLeftCorner, yPosOfUpperLeftCorner, objectLength, objectWidth, objectsStored);
+		id = std::to_string(objectsStored);
+		newObjective = AutoMap::genPoint(xPosOfUpperLeftCorner, yPosOfUpperLeftCorner, objectLength, objectWidth, id);
 		Objectives.push_back(newObjective);
 	}else{
 		printf("Not sure exactly what happened, but it was an error!");
 	}
     Obstacles.shrink_to_fit();
     Objectives.shrink_to_fit();
-    ObjectiveRegister.shrink_to_fit();
 }
 
 int AutoMap::FindPoint(std::string name)
@@ -360,10 +344,10 @@ int AutoMap::FindPoint(std::string name)
 	return -1; //if this is found, there was no objective named that, printf an error
 }
 
-AutoMap::pointOfInterest AutoMap::genPoint(int X, int Y, int L, int W, int nameString)
+AutoMap::pointOfInterest AutoMap::genPoint(int X, int Y, int L, int W, std::string nameString)
 {
 	pointOfInterest pointReturn;
-	pointReturn.nameOfObjective = std::to_string(nameString);
+	pointReturn.nameOfObjective = nameString;
 	pointReturn.Length = L;
 	pointReturn.Width = W;
 	pointReturn.xPosOfUpperLeft = X;
@@ -399,4 +383,19 @@ AutoMap::obstacle AutoMap::createObstacle(int xStart, int yStart, int Length, in
 		returnObs.SLOPE = rise/run;
 	}
 	return returnObs;
+}
+
+void AutoMap::createGuard(int x, int y, int length, int width)
+{
+	guardCounter = 0;
+	while (guardCounter != width - 1)
+	{
+		guardCreate.x = x;
+		guardCreate.y = y;
+		guardCreate.skipLength = length;
+		Guards.push_back(guardCreate);
+		guardCounter++;
+		guards++;
+	}
+
 }
