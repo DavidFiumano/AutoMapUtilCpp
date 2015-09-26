@@ -194,27 +194,30 @@ void AutoMap::LoadInitialFieldState()
     						objectParsed = true;
     					}
     				}
-    				objectCreateCounter++;
-    				Map.seekg(objectCreateCounter); //sets position to next character to read
-    				Map.read(parseBuffer, parseControl);
-    				if(parseBuffer[1] == 's')
+
+    				while(objectParsed == false)
     				{
-    					Map.seekg(objectCreateCounter);
-    			    	Map.read(parseBuffer, parseControl);
-    			    	objectCreateCounter++;
-    			    	objectLength++;
-    				}else{
-    			    	objectCreateCounter = objectCreateCounter + fieldWidth;
-    			    	Map.seekg(objectCreateCounter);
-    			    	Map.read(parseBuffer, parseControl);
-    			    	if(parseBuffer[1] != 's')
-    			    	{
-    			    		objectParsed = true;
-    			    	}else{
-    			    		objectWidth++;
-    			    	}
+    					objectCreateCounter++;
+    					Map.seekg(objectCreateCounter); //sets position to next character to read
+    					Map.read(parseBuffer, parseControl);
+    					if(parseBuffer[1] == 's')
+    					{
+    						objectCreateCounter = Map.tellg();
+    						Map.seekg(objectCreateCounter);
+    						Map.read(parseBuffer, parseControl);
+    						objectCreateCounter++;
+    						objectLength++;
+    					}else{
+    						objectCreateCounter = objectCreateCounter + fieldWidth;
+    						Map.seekg(objectCreateCounter);
+    						Map.read(parseBuffer, parseControl);
+    						if(parseBuffer[1] != 's')
+    						{
+    							objectParsed = true;
+    						}else{
+    							objectWidth++;
+    						}
     			    }
-    			    objectCreateCounter = 0;
     			    id = std::to_string(objectsStored);
     			    Objectives.push_back(AutoMap::genPoint(collumnsCounted, rowsCounted, objectLength, objectWidth, id));
     			    createGuard(collumnsCounted, rowsCounted, objectLength, objectWidth);
@@ -227,6 +230,7 @@ void AutoMap::LoadInitialFieldState()
     			    Obstacles.push_back(AutoMap::createObstacle(collumnsCounted + objectLength, rowsCounted, objectWidth, collumnsCounted + objectLength, rowsCounted - objectWidth, UNDEFINED)); //create right line
     			    Obstacles.shrink_to_fit();
     			    Objectives.shrink_to_fit();
+    				}
     		}else if(parseBuffer[1] == '+'){
     			//paths are treated as if they are over non-objective empty space
 
