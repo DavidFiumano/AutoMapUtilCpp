@@ -15,11 +15,13 @@
 #include <cmath>
 #include <PIDSource.h>
 
+
 class AutoMap
 {
 public:
 
 	enum ObjectiveType {SOLID, ZONE};
+	enum slope{HORIZONTAL, UNDEFINED, OTHER};
 
 	PIDSource * AMPIDObj;
 
@@ -31,20 +33,63 @@ public:
 	uint32_t analogChannelA;
 	uint32_t analogChannelB;
 
+	struct objective
+	{
+		std::string nameOfObjective;
+		int xPosOfUpperLeft;
+		int yPosOfUpperLeft;
+		int xPosOfUpperRight;
+		int yPosOfUpperRight;
+		int xPosOfLowerLeft;
+		int yPosOfLowerLeft;
+		int xPosOfLowerRight;
+		int yPosOfLowerRight;
+		int Length;
+		int Width;
+		/* Length -> *
+Width->  *		     *
+		 *		     */
+	};
+
 	struct pointOfInterest
-		{
-			int xValue;
-			int yValue;
-			int lengthOfZone;
-			int widthOfZone;
-		};
+	{
+		/*int xValue;
+		int yValue;
+		int lengthOfZone;
+		int widthOfZone;*/
+		std::string nameOfObjective;
+		int xPosOfUpperLeft;
+		int yPosOfUpperLeft;
+		int xPosOfUpperRight;
+		int yPosOfUpperRight;
+		int xPosOfLowerLeft;
+		int yPosOfLowerLeft;
+		int xPosOfLowerRight;
+		int yPosOfLowerRight;
+		int Length;
+		int Width;
+			/* Length -> *
+	Width->  *		     *
+			 *		     */
+	};
 
 	struct objectiveRegister
 	{
 		std::string objectiveName;
 		int memoryPosition;
 	};
-
+	struct obstacle
+	{
+		int xPosOfStart;
+		int yPosOfStart;
+		int lineLength;
+		int xPosOfEnd;
+		int yPosOfEnd;
+		int SLOPE;
+		int rise;
+		int run;
+		bool slopeIsUndefined;
+	};
 
 	std::fstream ObjectiveList;
 
@@ -52,8 +97,8 @@ public:
 
 
 	//TODO, replace with array template classes
-	std::vector<std::vector<pointOfInterest>> Objectives;
-	std::vector<std::vector<int>> Obstacles;
+	std::vector<pointOfInterest> Objectives;
+	std::vector<obstacle> Obstacles;
 	std::vector<objectiveRegister> ObjectiveRegister;
 
 	long int fieldLength;
@@ -110,6 +155,8 @@ public:
 	int FindPoint(std::string name);
 	int GetPos(); //returns position of robot in x,y coordinates
 
+	obstacle createObstacle(int xStart, int yStart, int Length, int xFinal, int yFinal, slope SLOPE);
+
 	int inchesTraveled;
 	int centimetersTraveled;
 
@@ -130,6 +177,7 @@ private:
 	bool bufferParsed;
 	bool parseError;
 	bool objectParsed;
+	bool objectiveFound;
 
 
 	int lineCount = 0;
@@ -167,7 +215,8 @@ private:
 
 	std::string buffer;
 
-	static pointOfInterest genPoint(int X, int Y, int L, int W);
+
+	pointOfInterest genPoint(int X, int Y, int L, int W, int nameString);
 };
 
 #endif /* AUTOMAP_H_ */

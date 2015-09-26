@@ -11,6 +11,7 @@
 //TODO TODO move class (closed loop control based)
 //TODO TODO wrappers for move class
 //TODO TODO TODO change anything that is stored as an open vector to a struct
+//TODO TODO TODO TODO create obstacles based in Register file
 /*
  * write to file using ofstream
  * use commas as deliminating characters
@@ -27,19 +28,9 @@ int main()
 	return 0;
 }
 
-AutoMap::pointOfInterest genPoint(int X, int Y, int L, int W)
-{
-	AutoMap::pointOfInterest pointReturn;
-	pointReturn.xValue = X;
-	pointReturn.yValue = Y;
-	pointReturn.lengthOfZone = L;
-	pointReturn.widthOfZone = W;
-	return pointReturn;
-}
-
-
 void AutoMap::AutoMapInit(int robotLength, int robotWidth, DigitalSource * channelA, DigitalSource * channelB)
 {
+
 	fieldLength = 1646;
 	//update this every time it's needed as well as any mention of 1646
 	fieldWidth = 823;
@@ -96,12 +87,11 @@ void AutoMap::AutoMapInit(int robotLength, int robotWidth, DigitalSource * chann
 
 void AutoMap::LoadInitialFieldState()
 {
+	AutoMap::pointOfInterest genPoint(int X, int Y, int L, int W, int nameString);
 	std::ifstream Map;
 	//creates an ifstream object named "Map"
 	char streamBuffer[fieldArea];
 	Map.open("InitialFieldState.fs");
-
-	pointOfInterest genPoint(int X, int Y, int L, int W);
 
 	//opens the file
     if(Map.is_open()) //checks if map opened properly
@@ -150,33 +140,30 @@ void AutoMap::LoadInitialFieldState()
     						Map.read(parseBuffer, 1);
     						barrierLength++;
     					}
-    					Obstacles[barriersStored].push_back(collumnsCounted); //xPos
+    					Obstacles.push_back(createObstacle(collumnsCounted, rowsCounted, barrierLength, collumnsCounted, rowsCounted - barrierLength, UNDEFINED));
+    					/*Obstacles[barriersStored].push_back(collumnsCounted); //xPos
     					Obstacles[barriersStored].push_back(rowsCounted);//yPos
     					Obstacles[barriersStored].push_back(barrierLength);//Length
     					Obstacles[barriersStored].push_back(collumnsCounted);//xPos of end
     					Obstacles[barriersStored].push_back(rowsCounted - barrierLength);//yPos of end
-    					Obstacles[barriersStored].shrink_to_fit();
+    					Obstacles[barriersStored].shrink_to_fit();*/
     				}else if(parseBuffer[1] != '='){
     					Map.seekg(parseCounter + barrierLength);
-    					Obstacles[barriersStored].push_back(collumnsCounted);//xPos
-    					Obstacles[barriersStored].push_back(rowsCounted);//yPos
         				while(parseBuffer[1] == '=')
         				{
         					Map.seekg(parseCounter + barrierLength);
         					Map.read(parseBuffer, 1);
         					barrierLength++;
         				}
-        				Obstacles[barriersStored].push_back(barrierLength);//Length
-        				Obstacles[barriersStored].push_back(collumnsCounted + barrierLength);//xPos
-        				Obstacles[barriersStored].push_back(rowsCounted);//yPos will always be the same
-        				Obstacles[barriersStored].shrink_to_fit();
+        				Obstacles.push_back(createObstacle(collumnsCounted, rowsCounted, barrierLength, collumnsCounted + barrierLength, rowsCounted, HORIZONTAL));
+        				Obstacles.shrink_to_fit();
     				}
     				checkControl = barriersStored;
     				while(checkControl != 0)
     				{
-    					if(Obstacles[barriersStored][4] == Obstacles[checkControl][4] && Obstacles[barriersStored][5] == Obstacles[checkControl][5])
+    					if(Obstacles[barriersStored].xPosOfEnd == Obstacles[checkControl].xPosOfEnd && Obstacles[barriersStored].yPosOfEnd == Obstacles[checkControl].yPosOfEnd)
     					{
-    						Obstacles[barriersStored].clear();
+    						Obstacles.pop_back();
     						checkControl = 0;
     					}else{
     					checkControl--;
@@ -200,9 +187,9 @@ void AutoMap::LoadInitialFieldState()
     				Map.read(parseBuffer, parseControl);
     				if(parseBuffer[1] == 'O')
     				{
+    					objectCreateCounter++;
     					Map.seekg(objectCreateCounter);
     					Map.read(parseBuffer, parseControl);
-    					objectCreateCounter++;
     					objectLength++;
     				}else{
     					objectCreateCounter = objectCreateCounter + fieldWidth;
@@ -218,9 +205,9 @@ void AutoMap::LoadInitialFieldState()
     				objectCreateCounter = 0;
     				//if next is o, read it, if next is not, add field width to reader and check there
     				//if nothing found there, then finish creating object
-    				pointConverter = genPoint(AutoMap::collumnsCounted, AutoMap::rowsCounted, AutoMap::objectLength, AutoMap::objectWidth);
-    				Objectives[objectsStored].push_back(pointConverter);
-    				Objectives[objectsStored].shrink_to_fit();
+    				pointConverter = AutoMap::genPoint(collumnsCounted, rowsCounted, objectLength, objectWidth, objectsStored);
+    				Objectives.push_back(pointConverter);
+    				Objectives.shrink_to_fit();
     			}
     		}else if(parseBuffer[1] == 's'){
     				//STORES AS POI
@@ -246,56 +233,14 @@ void AutoMap::LoadInitialFieldState()
     			    	}
     			    }
     			    objectCreateCounter = 0;
-    			    pointConverter = genPoint(collumnsCounted, rowsCounted, objectLength, objectWidth);
-    			    Objectives[objectsStored].push_back(pointConverter);
+    			    Objectives.push_back(AutoMap::genPoint(collumnsCounted, rowsCounted, objectLength, objectWidth, objectsStored));
    			    //STORES AS BARRIER
-    			    barrierLength = 0;
-    			    barriersStored++;
-    			    Map.seekg(parseCounter + 1);
-    			    Map.read(parseBuffer, parseControl);
-    			    if (parseBuffer[1] ==  's')
-    			    {
-    			    	Map.seekg(parseCounter + fieldWidth); //moves to the position directly below the
-    			    	Map.read(parseBuffer, 1);
-    			    	if(parseBuffer[1] == 's')
-    			    	{
-    			    		while(parseBuffer[1] == 's')
-    			    		{
-    			    			Map.read(parseBuffer, 1);
-    			    			barrierLength++;
-    			    		}
-    			    		Obstacles[barriersStored].push_back(collumnsCounted); //xPos
-    			    		Obstacles[barriersStored].push_back(rowsCounted);//yPos
-    			    		Obstacles[barriersStored].push_back(barrierLength);//Length
-    			    		Obstacles[barriersStored].push_back(collumnsCounted);//xPos of end
-    			    		Obstacles[barriersStored].push_back(rowsCounted - barrierLength);//yPos of end
-    			       		}else if(parseBuffer[1] != 's'){
-    			       			Map.seekg(parseCounter + barrierLength);
-    			       			Obstacles[barriersStored].push_back(collumnsCounted);//xPos
-    			       			Obstacles[barriersStored].push_back(rowsCounted);//yPos
-    			       			while(parseBuffer[1] == 's')
-    			       			{
-    			       				Map.read(parseBuffer, 1);
-    			       				barrierLength++;
-    			       			}
-    			       			Obstacles[barriersStored].push_back(barrierLength);//Length
-    			       			Obstacles[barriersStored].push_back(collumnsCounted + barrierLength);//xPos
-    			       			Obstacles[barriersStored].push_back(rowsCounted);//yPos will always be the same
-    			       		}
-    		       			checkControl = barriersStored;
-    		       			while(checkControl != 0)
-    		       			{
-    		       				if(Obstacles[barriersStored][4] == Obstacles[checkControl][4] && Obstacles[barriersStored][5] == Obstacles[checkControl][5])
-    		       				{
-    		       				Obstacles[barriersStored].clear();
-    		       				checkControl = 0;
-    		       				}else{
-    		    				checkControl--;
-    			       		}
-    		  			}
-    		    Obstacles[barriersStored].shrink_to_fit();
-    		    Objectives[objectsStored].shrink_to_fit();
-    			barrierLength = 0;
+    			    Obstacles.push_back(AutoMap::createObstacle(collumnsCounted, rowsCounted, objectLength, collumnsCounted + objectLength, rowsCounted, HORIZONTAL)); //creates top line
+    			    Obstacles.push_back(AutoMap::createObstacle(collumnsCounted, rowsCounted, objectWidth, collumnsCounted, rowsCounted - objectWidth, UNDEFINED)); //creats left line
+    			    Obstacles.push_back(AutoMap::createObstacle(collumnsCounted, rowsCounted - objectWidth, objectLength, collumnsCounted + objectLength, rowsCounted - objectWidth, HORIZONTAL)); //creates bottom line
+    			    Obstacles.push_back(AutoMap::createObstacle(collumnsCounted + objectLength, rowsCounted, objectWidth, collumnsCounted + objectLength, rowsCounted - objectWidth, UNDEFINED)); //create right line
+    			    Obstacles.shrink_to_fit();
+    			    Objectives.shrink_to_fit();
     		}else if(parseBuffer[1] == '+'){
     			//paths are treated as if they are over non-objective empty space
 
@@ -332,11 +277,10 @@ void AutoMap::LoadInitialFieldState()
     				parseError = true;
     			}
     			    //check the cases and parse them into arrays or vectors as required
-    			    parseCounter++;
+    		    parseCounter++;
     		parseBuffer[1] = 'N';
     		}
-    	}
-    }else{
+	}else{
     	printf("Something went wrong opening the .fs for loading, is it open in another program? \n");
     	printf("Due to an error opening the .fs, the initial field state is not loaded \n");
     	delete[] streamBuffer;
@@ -346,14 +290,14 @@ void AutoMap::LoadInitialFieldState()
     int counter = 0;
     while(counter <= barriersStored)
     {
-    	Obstacles[counter].shrink_to_fit();
+    	Obstacles.shrink_to_fit();
     	counter--;
     }
     Obstacles.shrink_to_fit();
     counter = objectsStored;
     while(counter <= objectsStored)
     {
-    	Objectives[counter].shrink_to_fit();
+    	Objectives.shrink_to_fit();
     	counter--;
     }
     Objectives.shrink_to_fit();
@@ -368,13 +312,15 @@ void AutoMap::createObjective(std::string name, int nameLength, int xPosOfUpperL
 		objectsStored++;
 		//stores object name
 		ObjectiveList << name << "\n" << objectsStored << "\n";
+		ObjectiveList << xPosOfUpperLeftCorner << "\n" << yPosOfUpperLeftCorner << "\n" << objectLength << "\n" << objectWidth << "\n";
 		/*writeTranslator[1] = objectsStored; //can only store up to 255 objects
 		ObjectiveList.write(writeTranslator, 1);*/
 		ObjectiveRegister[objectsStored].objectiveName.assign(name);
-		newObjective = genPoint(xPosOfUpperLeftCorner, yPosOfUpperLeftCorner, objectLength, objectWidth);
-		Objectives[objectsStored].push_back(newObjective);
+		newObjective = AutoMap::genPoint(xPosOfUpperLeftCorner, yPosOfUpperLeftCorner, objectLength, objectWidth, objectsStored);
+		Objectives.push_back(newObjective);
 		ObjectiveList.seekg(ObjectiveList.end);
 		objectiveListSize = ObjectiveList.tellg();
+		//STORE AS OBSTACLE
 		if(objectiveType == SOLID)
 		{
 			/* Length -> *
@@ -382,61 +328,24 @@ void AutoMap::createObjective(std::string name, int nameLength, int xPosOfUpperL
 	Width->	 * 			 *
 			 * 			 *
 			 *	 	 	 */
-
-			//STORE TOP
 			barriersStored++;
-			Obstacles[barriersStored].push_back(xPosOfUpperLeftCorner);
-			Obstacles[barriersStored].push_back(yPosOfUpperLeftCorner);
-			Obstacles[barriersStored].push_back(objectLength);
-			Obstacles[barriersStored].push_back(xPosOfUpperLeftCorner + objectLength);
-			Obstacles[barriersStored].push_back(yPosOfUpperLeftCorner);
-			//STORE LEFT SIDE
-			barriersStored++;
-			Obstacles[barriersStored].push_back(xPosOfUpperLeftCorner);
-			Obstacles[barriersStored].push_back(yPosOfUpperLeftCorner);
-			Obstacles[barriersStored].push_back(objectWidth);
-			Obstacles[barriersStored].push_back(xPosOfUpperLeftCorner);
-			Obstacles[barriersStored].push_back(yPosOfUpperLeftCorner - objectWidth);
-			//STORE BOTTOM
-			barriersStored++;
-			Obstacles[barriersStored].push_back(xPosOfUpperLeftCorner);
-			Obstacles[barriersStored].push_back(yPosOfUpperLeftCorner - objectWidth);
-			Obstacles[barriersStored].push_back(objectLength);
-			Obstacles[barriersStored].push_back(xPosOfUpperLeftCorner + objectLength);
-			Obstacles[barriersStored].push_back(yPosOfUpperLeftCorner - objectWidth);
-			//STORE RIGHT SIDE
-			barriersStored++;
-			Obstacles[barriersStored].push_back(xPosOfUpperLeftCorner + objectLength);
-			Obstacles[barriersStored].push_back(yPosOfUpperLeftCorner);
-			Obstacles[barriersStored].push_back(objectWidth);
-			Obstacles[barriersStored].push_back(xPosOfUpperLeftCorner + objectLength);
-			Obstacles[barriersStored].push_back(yPosOfUpperLeftCorner - objectWidth);
+		    Obstacles.push_back(AutoMap::createObstacle(collumnsCounted, rowsCounted, objectLength, collumnsCounted + objectLength, rowsCounted, HORIZONTAL)); //creates top line
+		    Obstacles.push_back(AutoMap::createObstacle(collumnsCounted, rowsCounted, objectWidth, collumnsCounted, rowsCounted - objectWidth, UNDEFINED)); //creats left line
+		    Obstacles.push_back(AutoMap::createObstacle(collumnsCounted, rowsCounted - objectWidth, objectLength, collumnsCounted + objectLength, rowsCounted - objectWidth, HORIZONTAL)); //creates bottom line
+		    Obstacles.push_back(AutoMap::createObstacle(collumnsCounted + objectLength, rowsCounted, objectWidth, collumnsCounted + objectLength, rowsCounted - objectWidth, UNDEFINED)); //create right line
 		}else{
 			objectsStored++;
-
 		}
 	}else if (loadIntoFile == true){
 		printf("For some reason the ObjectiveList didn't open. Is it open in some other program? \n");
 		printf("Objective not created. Sorry, I tried. \n");
-	}else if (loadIntoFile == false){
-		newObjective = genPoint(xPosOfUpperLeftCorner, yPosOfUpperLeftCorner, objectLength, objectWidth);
-		Objectives[objectsStored].push_back(newObjective);
+	}else if (ObjectiveList.is_open() && loadIntoFile == false){
+		newObjective = AutoMap::genPoint(xPosOfUpperLeftCorner, yPosOfUpperLeftCorner, objectLength, objectWidth, objectsStored);
+		Objectives.push_back(newObjective);
 	}else{
 		printf("Not sure exactly what happened, but it was an error!");
 	}
-    int counter = 0;
-    while(counter <= barriersStored)
-    {
-    	Obstacles[counter].shrink_to_fit();
-    	counter--;
-    }
     Obstacles.shrink_to_fit();
-    counter = objectsStored;
-    while(counter <= objectsStored)
-    {
-    	Objectives[counter].shrink_to_fit();
-    	counter--;
-    }
     Objectives.shrink_to_fit();
     ObjectiveRegister.shrink_to_fit();
 }
@@ -444,16 +353,57 @@ void AutoMap::createObjective(std::string name, int nameLength, int xPosOfUpperL
 int AutoMap::FindPoint(std::string name)
 {
 	objectiveFind = objectsStored;
-	while(objectiveFind != 0)
+	while(objectiveFind != 0 && objectiveFound == false)
 	{
-		if(ObjectiveRegister[objectiveFind].objectiveName == name)
+		if(name.compare(Objectives[objectiveFind].nameOfObjective) != 0)
 		{
-			return ObjectiveRegister[objectiveFind].memoryPosition;
-			objectiveFind = 0;
-		}else{
-		objectiveFind--;
-		return 0;
+			objectiveFind--;
+		}else if(name.compare(Objectives[objectiveFind].nameOfObjective) == 0)
+		{
+			objectiveFound = true;
+			return objectiveFind;
 		}
 	}
+	return -1; //if this is found, there was no objective named that, printf an error
 }
 
+AutoMap::pointOfInterest AutoMap::genPoint(int X, int Y, int L, int W, int nameString)
+{
+	pointOfInterest pointReturn;
+	pointReturn.nameOfObjective = std::to_string(nameString);
+	pointReturn.Length = L;
+	pointReturn.Width = W;
+	pointReturn.xPosOfUpperLeft = X;
+	pointReturn.yPosOfUpperLeft = Y;
+	pointReturn.xPosOfUpperRight = pointReturn.xPosOfUpperLeft + pointReturn.Length;
+	pointReturn.yPosOfUpperRight = pointReturn.yPosOfUpperLeft;
+	pointReturn.xPosOfLowerLeft = pointReturn.xPosOfUpperLeft;
+	pointReturn.yPosOfLowerLeft = pointReturn.yPosOfUpperLeft - pointReturn.Width;
+	pointReturn.xPosOfLowerRight = pointReturn.xPosOfUpperLeft + pointReturn.Length;
+	pointReturn.yPosOfLowerRight = pointReturn.yPosOfUpperLeft - pointReturn.Width;
+	return pointReturn;
+}
+
+AutoMap::obstacle AutoMap::createObstacle(int xStart, int yStart, int Length, int xFinal, int yFinal, slope SLOPE)
+{
+	obstacle returnObs;
+	returnObs.xPosOfStart = xStart;
+	returnObs.yPosOfStart = yStart;
+	returnObs.xPosOfEnd = xFinal;
+	returnObs.yPosOfEnd = yFinal;
+	if(SLOPE == HORIZONTAL)
+	{
+		returnObs.SLOPE = 0;
+		returnObs.slopeIsUndefined = false;
+	}else if(SLOPE == UNDEFINED)
+	{
+		returnObs.slopeIsUndefined = true;
+		returnObs.SLOPE = 0;
+	}else if(SLOPE == OTHER)
+	{
+		returnObs.rise = (returnObs.yPosOfStart - returnObs.yPosOfEnd);
+		returnObs.run = (returnObs.xPosOfStart - returnObs.xPosOfEnd);
+		returnObs.SLOPE = rise/run;
+	}
+	return returnObs;
+}
