@@ -178,7 +178,10 @@ void AutoMap::LoadInitialFieldState()
     				id = std::to_string(objectsStored);
     				pointConverter = AutoMap::genPoint(collumnsCounted, rowsCounted, objectLength, objectWidth, id);
     				Objectives.push_back(pointConverter);
+    				createGuard(collumnsCounted, rowsCounted, objectLength, objectWidth);
     				Objectives.shrink_to_fit();
+    				objectLength = 0;
+    				objectWidth = 0;
     			}
     		}else if(parseBuffer[1] == 's'){
     				//STORES AS POI
@@ -214,6 +217,9 @@ void AutoMap::LoadInitialFieldState()
     			    objectCreateCounter = 0;
     			    id = std::to_string(objectsStored);
     			    Objectives.push_back(AutoMap::genPoint(collumnsCounted, rowsCounted, objectLength, objectWidth, id));
+    			    createGuard(collumnsCounted, rowsCounted, objectLength, objectWidth);
+    			    objectLength = 0;
+    			    objectWidth = 0;
    			    //STORES AS BARRIER
     			    Obstacles.push_back(AutoMap::createObstacle(collumnsCounted, rowsCounted, objectLength, collumnsCounted + objectLength, rowsCounted, HORIZONTAL)); //creates top line
     			    Obstacles.push_back(AutoMap::createObstacle(collumnsCounted, rowsCounted, objectWidth, collumnsCounted, rowsCounted - objectWidth, UNDEFINED)); //creats left line

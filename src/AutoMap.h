@@ -108,7 +108,6 @@ Width->  *		     *
 	//TODO, replace with array template classes
 	std::vector<pointOfInterest> Objectives;
 	std::vector<obstacle> Obstacles;
-	std::vector<objectiveRegister> ObjectiveRegister;
 
 	long int fieldLength;
 	long int fieldWidth;
