@@ -155,12 +155,15 @@ void AutoMap::LoadInitialFieldState()
     				objectCreateCounter++;
     				Map.seekg(objectCreateCounter); //sets position to next character to read
     				Map.read(parseBuffer, parseControl);
-    				if(parseBuffer[1] == 'O')
+    				if(parseBuffer[1] == 'O' && lengthDetermined == false)
     				{
     					objectCreateCounter++;
     					Map.seekg(objectCreateCounter);
     					Map.read(parseBuffer, parseControl);
     					objectLength++;
+    				}
+    				else if(parseBuffer[1] == 'O' && lengthDetermined == true){
+    					objectCreateCounter = objectCreateCounter + objectLength;
     				}else{
     					objectCreateCounter = objectCreateCounter + fieldWidth;
     					Map.seekg(objectCreateCounter);
@@ -170,6 +173,7 @@ void AutoMap::LoadInitialFieldState()
     						objectParsed = true;
     					}else{
     						objectWidth++;
+    						lengthDetermined = true;
     					}
     				}
     				objectCreateCounter = 0;
@@ -183,6 +187,7 @@ void AutoMap::LoadInitialFieldState()
     				objectLength = 0;
     				objectWidth = 0;
     			}
+    			lengthDetermined = false;
     		}else if(parseBuffer[1] == 's'){
     				//STORES AS POI
     				objectParsed = false;
@@ -200,13 +205,15 @@ void AutoMap::LoadInitialFieldState()
     					objectCreateCounter++;
     					Map.seekg(objectCreateCounter); //sets position to next character to read
     					Map.read(parseBuffer, parseControl);
-    					if(parseBuffer[1] == 's')
+    					if(parseBuffer[1] == 's' && lengthDetermined  == false)
     					{
     						objectCreateCounter = Map.tellg();
     						Map.seekg(objectCreateCounter);
     						Map.read(parseBuffer, parseControl);
     						objectCreateCounter++;
     						objectLength++;
+    					}else if(parseBuffer[1] == 's' && lengthDetermined == true){
+    						objectCreateCounter = objectCreateCounter + objectLength;
     					}else{
     						objectCreateCounter = objectCreateCounter + fieldWidth;
     						Map.seekg(objectCreateCounter);
@@ -216,6 +223,7 @@ void AutoMap::LoadInitialFieldState()
     							objectParsed = true;
     						}else{
     							objectWidth++;
+    							lengthDetermined = true;
     						}
     			    }
     			    id = std::to_string(objectsStored);
@@ -223,6 +231,7 @@ void AutoMap::LoadInitialFieldState()
     			    createGuard(collumnsCounted, rowsCounted, objectLength, objectWidth);
     			    objectLength = 0;
     			    objectWidth = 0;
+    			    lengthDetermined = false;
    			    //STORES AS BARRIER
     			    Obstacles.push_back(AutoMap::createObstacle(collumnsCounted, rowsCounted, objectLength, collumnsCounted + objectLength, rowsCounted, HORIZONTAL)); //creates top line
     			    Obstacles.push_back(AutoMap::createObstacle(collumnsCounted, rowsCounted, objectWidth, collumnsCounted, rowsCounted - objectWidth, UNDEFINED)); //creats left line

@@ -234,6 +234,8 @@ private:
 
 	pointOfInterest genPoint(int X, int Y, int L, int W, std::string nameString);
 	void createGuard(int x, int y, int length, int width);
+
+	bool lengthDetermined;
 };
 
 #endif /* AUTOMAP_H_ */
