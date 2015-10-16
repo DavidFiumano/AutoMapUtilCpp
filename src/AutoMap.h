@@ -13,27 +13,32 @@
 #include <vector>
 #include <Encoder.h>
 #include <cmath>
-#include <PIDSource.h>
-
+#include <PIDController.h>
+#include <pthread.h>
 
 class AutoMap
 {
 public:
 
-
-
 	enum ObjectiveType {SOLID, ZONE};
 	enum slope{HORIZONTAL, UNDEFINED, OTHER};
 
-	PIDSource * AMPIDObj;
-
-	Encoder * AMEncoderObj;
+	Encoder * encoder1;
+	Encoder * encoder2;
+	Encoder * encoder3;
+	Encoder * encoder4;
 
 	DigitalSource * channelA;
 	DigitalSource * channelB;
 
 	uint32_t analogChannelA;
 	uint32_t analogChannelB;
+
+	struct slopeInfo
+	{
+		float rise;
+		float run;
+	};
 
 	struct guard
 	{
@@ -94,7 +99,7 @@ Width->  *		     *
 		int lineLength;
 		int xPosOfEnd;
 		int yPosOfEnd;
-		int SLOPE;
+		int numericalSlope;
 		int rise;
 		int run;
 		bool slopeIsUndefined;
@@ -113,18 +118,15 @@ Width->  *		     *
 	long int fieldWidth;
 	long int fieldArea;
 	//both of the following will be used in path finding to ensure the robot goes where it needs to be
-	int robotLength;//used in determining position of robot
-	//cm
-	int robotWidth;//used in determining position of robot
-	//cm
-	//set x and y position using these if you don't wish to use a file to do so
-	int robotAngle; //angle relative to other end of the field (assumed 180)
-	//potentially make a program to determine this for noobish teams? pick point straight ahead and compare slopes for angles?
-	int robotPosition[3];
-	//xVal of upper left corner, yVal of the same, angle of robot relative to ends of the field
+	int robotDimensions[4];//used in determining position of robot
+	//length, width, distance from corner to center, cm, circumference of circle
+	int robotPosition[9];
+	//x and y values of each of the four corners, angle of each of the corners
 	//robat!
 	int setAngle;
 	int objectsStored;
+
+	double slopeOfLine;
 
 	pointOfInterest newObjective;
 
@@ -134,6 +136,29 @@ Width->  *		     *
 
 	bool robotIsTurning;
 
+	uint32_t encoder1ChannelA; //front left
+	uint32_t encoder1ChannelB;
+	uint32_t encoder2ChannelA; //front right
+	uint32_t encoder2ChannelB;
+	uint32_t encoder3ChannelA; //back left
+	uint32_t encoder3ChannelB;
+	uint32_t encoder4ChannelA; //back right
+	uint32_t encoder4ChannelB;
+
+	float cornerAngle1;
+	float cornerAngle2;
+	float cornerAngle3;
+	float cornerAngle4;
+
+	int inchesTraveled1;
+	int inchesTraveled2;
+	int inchesTraveled3;
+	int inchesTraveled4;
+	float centimetersTraveled1;
+	float centimetersTraveled2;
+	float centimetersTraveled3;
+	float centimetersTraveled4;
+
 	int main();
 	//eliminate upon completion of the project
 	void MoveRobot(int time);
@@ -142,14 +167,14 @@ Width->  *		     *
 
 	void FindPath(int xFind, int yFind);
 
-	void AutoMapInit(int robotLength, int robotWidth, uint32_t * channelA, uint32_t channelB);
-	void AutoMapInit(int robotLength, int robotWidth, DigitalSource * channelA, DigitalSource * channelB); //gets all neccessary information needed to
+	void AutoMapInit(int robotLength, int robotWidth, uint32_t encoderChannels[8]);
+	void AutoMapInitDigital(int robotLength, int robotWidth, DigitalSource * channelA, DigitalSource * channelB); //gets all neccessary information needed to
 	//will eventually take ports and other things too
 	//MUST run first
 	void LoadInitialFieldState(); //Loads the initial robotPosition into a set of arrays
 	//MUST BE RUN OUTSIDE OF PERIODIC
 	//only usable once
-
+	//if the robot is tilted to the side, then it shouldn't be included in the field state file
 
 	void createObjective(std::string name, int nameLength, int xPosOfUpperLeftCorner, int yPosOfUpperLeftCorner, int objectLength, int objectWidth, bool loadIntoFile, ObjectiveType); //must be called outside of periodic
 	bool checkTurn(); //checks if the robot turns
@@ -157,25 +182,21 @@ Width->  *		     *
 	void turnTime(int time); //seconds
 	void turnAngle(int angle); //take a guess
 	void moveDistance(int dist); //centimeters
-	void setRobotPosition(int setX, int setY); //sets position of robot, usable any time
+	void setRobotPosition(int setX[8]); //sets position of robot, usable any time
 	void setRobotAngle(int setAngle);
 	void MonitorPos(); //monitors position of robot
 	int FindPoint(std::string name);
 	int GetPos(); //returns position of robot in x,y coordinates
-
-	obstacle createObstacle(int xStart, int yStart, int Length, int xFinal, int yFinal, slope SLOPE);
-
-	int inchesTraveled;
-	int centimetersTraveled;
-
-	char * internalRegister;
-
-
+	void CorrectMovement(int centimetersTraveledLow, int centimetersTraveledAverage);
+	void MeasureTurn(float encoder1, float encoder2, float encoder3, float encoder4);
+	void createObstacle(int xStart, int yStart, int Length, int xFinal, int yFinal, slope SLOPE);
 
 private:
 
 	float rise;
 	float run;
+
+	float circleCircumference;
 
 	objectiveRegister newRegister;
 
@@ -221,6 +242,12 @@ private:
 	int objectiveFind;
 	int lines = 0;
 
+	float cornerSlope1;
+	float cornerSlope2;
+	float cornerSlope3;
+	float cornerSlope4;
+
+	float decSlope;
 	std::string buffer;
 	std::string id;
 
@@ -236,6 +263,9 @@ private:
 	void createGuard(int x, int y, int length, int width);
 
 	bool lengthDetermined;
+
+	slopeInfo slopeReturn;
+
 };
 
 #endif /* AUTOMAP_H_ */

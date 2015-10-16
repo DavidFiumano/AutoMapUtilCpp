@@ -10,10 +10,7 @@
 //TODO get nathaniel to make file generator for c++ and java
 //TODO TODO move class (closed loop control based)
 //TODO TODO wrappers for move class
-//TODO TODO TODO change anything that is stored as an open vector to a struct
-
-
-
+//TODO TODO read objectives.txt
 
 
 int main()
@@ -21,7 +18,7 @@ int main()
 	return 0;
 }
 
-void AutoMap::AutoMapInit(int robotLength, int robotWidth, DigitalSource * channelA, DigitalSource * channelB)
+void AutoMap::AutoMapInit(int robotLength, int robotWidth, uint32_t encoderChannels[8])
 {
 
 	fieldLength = 1646;
@@ -30,20 +27,41 @@ void AutoMap::AutoMapInit(int robotLength, int robotWidth, DigitalSource * chann
 	//update this every time it's needed as well as any mention of 1646
 	fieldArea = fieldWidth*fieldLength;
 
+	//ROBOT DIMENSIONS
+	robotDimensions[1] = robotLength; //robot length
+	robotDimensions[2] = robotWidth;
+	robotDimensions[3] = pow(robotLength, 2) + pow(robotWidth, 3); //a^2+b^2=c^2
+	robotDimensions[3] = sqrt(robotDimensions[3]); //gets the length of C (how long corner to corner)
+	robotDimensions[3] = robotDimensions[3] * 0.5; //gets midpoint of line C, which is the midpoint of the robot
+	robotDimensions[4] = 2 * 3.14 * robotDimensions[3];
 	//INITIAL VALUES SET
 	//PARSING CSV
 	bufferParsed = false;
 	parseError = false;
 	parseControl = 1;
 	//POSITIONING
-	robotAngle = 180;
-
+	robotPosition[9] = 180;
 	objectsStored = 0;
-
 	pushGuard = false;
-
 	ObjectiveList.open("Objectives.txt"); //opens ObjectiveList
+	//CREATE ENCODER OBJECTS
+
+	uint32_t encoder1ChannelA = encoderChannels[1]; //front left
+	uint32_t encoder1ChannelB = encoderChannels[2];
+	uint32_t encoder2ChannelA = encoderChannels[3]; //front right
+	uint32_t encoder2ChannelB = encoderChannels[4];
+	uint32_t encoder3ChannelA = encoderChannels[5]; //back left
+	uint32_t encoder3ChannelB = encoderChannels[6];
+	uint32_t encoder4ChannelA = encoderChannels[7]; //back right
+	uint32_t encoder4ChannelB = encoderChannels[8];
+
+	encoder1 = new Encoder(encoder1ChannelA, encoder1ChannelB, false, Encoder::k1X);
+	encoder2 = new Encoder(encoder2ChannelA, encoder2ChannelB, false, Encoder::k1X);
+	encoder3 = new Encoder(encoder3ChannelA, encoder3ChannelB, false, Encoder::k1X);
+	encoder4 = new Encoder(encoder4ChannelA, encoder4ChannelB, false, Encoder::k1X);
+
 }
+
 
 void AutoMap::LoadInitialFieldState()
 {
@@ -100,13 +118,7 @@ void AutoMap::LoadInitialFieldState()
     						Map.read(parseBuffer, 1);
     						barrierLength++;
     					}
-    					Obstacles.push_back(createObstacle(collumnsCounted, rowsCounted, barrierLength, collumnsCounted, rowsCounted - barrierLength, UNDEFINED));
-    					/*Obstacles[barriersStored].push_back(collumnsCounted); //xPos
-    					Obstacles[barriersStored].push_back(rowsCounted);//yPos
-    					Obstacles[barriersStored].push_back(barrierLength);//Length
-    					Obstacles[barriersStored].push_back(collumnsCounted);//xPos of end
-    					Obstacles[barriersStored].push_back(rowsCounted - barrierLength);//yPos of end
-    					Obstacles[barriersStored].shrink_to_fit();*/
+    					createObstacle(collumnsCounted, rowsCounted, barrierLength, collumnsCounted, rowsCounted - barrierLength, UNDEFINED);
     				}else if(parseBuffer[1] != '='){
     					Map.seekg(parseCounter + barrierLength);
         				while(parseBuffer[1] == '=')
@@ -115,7 +127,7 @@ void AutoMap::LoadInitialFieldState()
         					Map.read(parseBuffer, 1);
         					barrierLength++;
         				}
-        				Obstacles.push_back(createObstacle(collumnsCounted, rowsCounted, barrierLength, collumnsCounted + barrierLength, rowsCounted, HORIZONTAL));
+        				createObstacle(collumnsCounted, rowsCounted, barrierLength, collumnsCounted + barrierLength, rowsCounted, HORIZONTAL);
         				Obstacles.shrink_to_fit();
     				}
     				checkControl = barriersStored;
@@ -233,10 +245,10 @@ void AutoMap::LoadInitialFieldState()
     			    objectWidth = 0;
     			    lengthDetermined = false;
    			    //STORES AS BARRIER
-    			    Obstacles.push_back(AutoMap::createObstacle(collumnsCounted, rowsCounted, objectLength, collumnsCounted + objectLength, rowsCounted, HORIZONTAL)); //creates top line
-    			    Obstacles.push_back(AutoMap::createObstacle(collumnsCounted, rowsCounted, objectWidth, collumnsCounted, rowsCounted - objectWidth, UNDEFINED)); //creats left line
-    			    Obstacles.push_back(AutoMap::createObstacle(collumnsCounted, rowsCounted - objectWidth, objectLength, collumnsCounted + objectLength, rowsCounted - objectWidth, HORIZONTAL)); //creates bottom line
-    			    Obstacles.push_back(AutoMap::createObstacle(collumnsCounted + objectLength, rowsCounted, objectWidth, collumnsCounted + objectLength, rowsCounted - objectWidth, UNDEFINED)); //create right line
+    			    createObstacle(collumnsCounted, rowsCounted, objectLength, collumnsCounted + objectLength, rowsCounted, HORIZONTAL); //creates top line
+    			    createObstacle(collumnsCounted, rowsCounted, objectWidth, collumnsCounted, rowsCounted - objectWidth, UNDEFINED); //creats left line
+    			    createObstacle(collumnsCounted, rowsCounted - objectWidth, objectLength, collumnsCounted + objectLength, rowsCounted - objectWidth, HORIZONTAL); //creates bottom line
+    			    createObstacle(collumnsCounted + objectLength, rowsCounted, objectWidth, collumnsCounted + objectLength, rowsCounted - objectWidth, UNDEFINED); //create right line
     			    Obstacles.shrink_to_fit();
     			    Objectives.shrink_to_fit();
     				}
@@ -245,7 +257,7 @@ void AutoMap::LoadInitialFieldState()
 
     		}else if(parseBuffer[1] == '~'){
     			//the robot
-    			robotParseSeeker = robotLength + parseCounter;
+    			robotParseSeeker = robotDimensions[1] + parseCounter;
     			robotParseMechanizism--;
     			robotParseMechanizism = rowsCounted;
     			if(robotParseMechanizism == 0)
@@ -259,7 +271,9 @@ void AutoMap::LoadInitialFieldState()
 
     		}else if(parseBuffer[1] == 'A'){
     			//action point, calls command referred to by pointer
-    		}else if (parseBuffer[1] == 'N'){
+    		}else if(parseBuffer[1] == '\n'){
+    			rowsCounted--; //found new row, substract one
+    		}else if(parseBuffer[1] == 'N'){
     			printf(".fs didn't parse fully, for some reason it didn't load streamBuffer into parseBuffer \n");
     			printf("Is the file too short or corrupt? Recreate the .fs \n");
     			Obstacles.clear();
@@ -267,6 +281,9 @@ void AutoMap::LoadInitialFieldState()
 
     			parseError = true;
     			//if parseBuffer didn't update
+    		}else if(Map.tellg() == Map.end){
+    			bufferParsed = true;
+    			printf("The .fs information has been loaded");
     		}else{
     				printf(".fs enountered an unknown character, has the .fs been altered or corrupted? \n");
     				printf("Recreate .fs \n");
@@ -325,10 +342,10 @@ void AutoMap::createObjective(std::string name, int nameLength, int xPosOfUpperL
 			 * 			 *
 			 *	 	 	 */
 			barriersStored++;
-		    Obstacles.push_back(AutoMap::createObstacle(collumnsCounted, rowsCounted, objectLength, collumnsCounted + objectLength, rowsCounted, HORIZONTAL)); //creates top line
-		    Obstacles.push_back(AutoMap::createObstacle(collumnsCounted, rowsCounted, objectWidth, collumnsCounted, rowsCounted - objectWidth, UNDEFINED)); //creats left line
-		    Obstacles.push_back(AutoMap::createObstacle(collumnsCounted, rowsCounted - objectWidth, objectLength, collumnsCounted + objectLength, rowsCounted - objectWidth, HORIZONTAL)); //creates bottom line
-		    Obstacles.push_back(AutoMap::createObstacle(collumnsCounted + objectLength, rowsCounted, objectWidth, collumnsCounted + objectLength, rowsCounted - objectWidth, UNDEFINED)); //create right line
+			createObstacle(collumnsCounted, rowsCounted, objectLength, collumnsCounted + objectLength, rowsCounted, HORIZONTAL); //creates top line
+		    createObstacle(collumnsCounted, rowsCounted, objectWidth, collumnsCounted, rowsCounted - objectWidth, UNDEFINED); //creats left line
+		    createObstacle(collumnsCounted, rowsCounted - objectWidth, objectLength, collumnsCounted + objectLength, rowsCounted - objectWidth, HORIZONTAL); //creates bottom line
+		    createObstacle(collumnsCounted + objectLength, rowsCounted, objectWidth, collumnsCounted + objectLength, rowsCounted - objectWidth, UNDEFINED); //create right line
 		}else{
 			objectsStored++;
 		}
@@ -380,7 +397,7 @@ AutoMap::pointOfInterest AutoMap::genPoint(int X, int Y, int L, int W, std::stri
 	return pointReturn;
 }
 
-AutoMap::obstacle AutoMap::createObstacle(int xStart, int yStart, int Length, int xFinal, int yFinal, slope SLOPE)
+void AutoMap::createObstacle(int xStart, int yStart, int Length, int xFinal, int yFinal, slope SLOPE)
 {
 	obstacle returnObs;
 	returnObs.xPosOfStart = xStart;
@@ -389,19 +406,19 @@ AutoMap::obstacle AutoMap::createObstacle(int xStart, int yStart, int Length, in
 	returnObs.yPosOfEnd = yFinal;
 	if(SLOPE == HORIZONTAL)
 	{
-		returnObs.SLOPE = 0;
+		returnObs.numericalSlope = 0;
 		returnObs.slopeIsUndefined = false;
 	}else if(SLOPE == UNDEFINED)
 	{
 		returnObs.slopeIsUndefined = true;
-		returnObs.SLOPE = 0;
+		returnObs.numericalSlope = 0;
 	}else if(SLOPE == OTHER)
 	{
 		returnObs.rise = (returnObs.yPosOfStart - returnObs.yPosOfEnd);
 		returnObs.run = (returnObs.xPosOfStart - returnObs.xPosOfEnd);
-		returnObs.SLOPE = rise/run;
+		returnObs.numericalSlope = rise/run;
 	}
-	return returnObs;
+	Obstacles.push_back(returnObs);
 }
 
 void AutoMap::createGuard(int x, int y, int length, int width)
@@ -416,5 +433,4 @@ void AutoMap::createGuard(int x, int y, int length, int width)
 		guardCounter++;
 		guards++;
 	}
-
 }
