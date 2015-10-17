@@ -18,9 +18,10 @@ int main()
 	return 0;
 }
 
-void AutoMap::AutoMapInit(int robotLength, int robotWidth, uint32_t encoderChannels[8])
+AutoMap::AutoMap(int robotLength, int robotWidth, uint32_t encoderChannels[8])
 {
-
+   	barriersStored = 0;
+   	parseCounter = 0;
 	fieldLength = 1646;
 	//update this every time it's needed as well as any mention of 1646
 	fieldWidth = 823;
@@ -46,22 +47,51 @@ void AutoMap::AutoMapInit(int robotLength, int robotWidth, uint32_t encoderChann
 	ObjectiveList.open("Objectives.txt"); //opens ObjectiveList
 	//CREATE ENCODER OBJECTS
 
-	uint32_t encoder1ChannelA = encoderChannels[1]; //front left
-	uint32_t encoder1ChannelB = encoderChannels[2];
-	uint32_t encoder2ChannelA = encoderChannels[3]; //front right
-	uint32_t encoder2ChannelB = encoderChannels[4];
-	uint32_t encoder3ChannelA = encoderChannels[5]; //back left
-	uint32_t encoder3ChannelB = encoderChannels[6];
-	uint32_t encoder4ChannelA = encoderChannels[7]; //back right
-	uint32_t encoder4ChannelB = encoderChannels[8];
+	encoder1ChannelA = encoderChannels[1]; //front left
+    encoder1ChannelB = encoderChannels[2];
+	encoder2ChannelA = encoderChannels[3]; //front right
+	encoder2ChannelB = encoderChannels[4];
+	encoder3ChannelA = encoderChannels[5]; //back left
+	encoder3ChannelB = encoderChannels[6];
+	encoder4ChannelA = encoderChannels[7]; //back right
+	encoder4ChannelB = encoderChannels[8];
 
 	encoder1 = new Encoder(encoder1ChannelA, encoder1ChannelB, false, Encoder::k1X);
 	encoder2 = new Encoder(encoder2ChannelA, encoder2ChannelB, false, Encoder::k1X);
 	encoder3 = new Encoder(encoder3ChannelA, encoder3ChannelB, false, Encoder::k1X);
 	encoder4 = new Encoder(encoder4ChannelA, encoder4ChannelB, false, Encoder::k1X);
 
+	lengthDetermined = false;
+
+	robotIsTurning = false;
+
+	objectParsed = false;
 }
 
+virtual AutoMap::~AutoMap()
+{
+	Objectives.clear();
+	Objectives.shrink_to_fit();
+	Obstacles.clear();
+	Obstacles.shrink_to_fit();
+	delete encoder1;
+	delete encoder2;
+	delete encoder3;
+	delete encoder4;
+	delete[] robotPosition;
+	delete[] robotDimensions;
+	delete lengthDetermined;
+	delete robotIsTurning;
+	delete objectParsed;
+	delete encoder1ChannelA;
+	delete encoder1ChannelB;
+	delete encoder2ChannelA;
+	delete encoder2ChannelB;
+	delete encoder3ChannelA;
+	delete encoder3ChannelB;
+	delete encoder4ChannelA;
+	delete encoder4ChannelB;
+}
 
 void AutoMap::LoadInitialFieldState()
 {
@@ -79,8 +109,6 @@ void AutoMap::LoadInitialFieldState()
     	Map.read(streamBuffer, fieldArea); //places entire .fs into streamBuffer so that other programmers can alter it and/or parse it themselves
     	Map.seekg(0, Map.beg); //resets the position we read from next useful for parsing()
        	char parseBuffer[parseControl];
-       	barriersStored = 0;
-       	parseCounter = 0;
     	while(bufferParsed == false && parseError == false)
     	{
     		rowsCounted = fieldLength;
@@ -148,7 +176,6 @@ void AutoMap::LoadInitialFieldState()
     			//used for zones going
     			objectCreateCounter = Map.tellg();
     			guardCheck = guards;
-    			objectParsed = false;
     			while(guardCheck != 0)
     			{
     				if(Guards[guardCheck].x == collumnsCounted && Guards[guardCheck].y == rowsCounted)
@@ -332,7 +359,7 @@ void AutoMap::createObjective(std::string name, int nameLength, int xPosOfUpperL
 		ObjectiveList.write(writeTranslator, 1);*/
 		Objectives.push_back(AutoMap::genPoint(collumnsCounted, rowsCounted, objectLength, objectWidth, name));
 		ObjectiveList.seekg(ObjectiveList.end);
-		objectiveListSize = ObjectiveList.tellg();
+		objectiveListSize = ObjectiveList.tellg(); //TODO find out what I meant to do here
 		//STORE AS OBSTACLE
 		if(objectiveType == SOLID)
 		{

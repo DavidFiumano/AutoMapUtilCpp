@@ -28,12 +28,6 @@ public:
 	Encoder * encoder3;
 	Encoder * encoder4;
 
-	DigitalSource * channelA;
-	DigitalSource * channelB;
-
-	uint32_t analogChannelA;
-	uint32_t analogChannelB;
-
 	struct slopeInfo
 	{
 		float rise;
@@ -123,16 +117,11 @@ Width->  *		     *
 	int robotPosition[9];
 	//x and y values of each of the four corners, angle of each of the corners
 	//robat!
-	int setAngle;
 	int objectsStored;
 
 	double slopeOfLine;
 
 	pointOfInterest newObjective;
-
-
-	bool xPosDetermined;
-	bool yPosDetermined;
 
 	bool robotIsTurning;
 
@@ -161,6 +150,7 @@ Width->  *		     *
 
 	int main();
 	//eliminate upon completion of the project
+	AutoMap(int robotLength, int robotWidth, uint32_t encoderChannels[8]);
 	void MoveRobot(int time);
 	//Moves robot at certain speed for so and so seconds
 	void MoveRobotToPosition(int xPosMove, int yPosMove);
