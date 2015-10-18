@@ -33,14 +33,8 @@ void AutoMap::MonitorPos()
 	centimetersTraveled2 = 2.54 * inchesTraveled2;
 	centimetersTraveled3 = 2.54 * inchesTraveled3;
 	centimetersTraveled4 = 2.54 * inchesTraveled4;
-	if(centimetersTraveled1 < 0 && centimetersTraveled3 > 0)
+	if(checkTurn() == true)
 	{
-		MeasureTurn(centimetersTraveled1, centimetersTraveled2, centimetersTraveled3, centimetersTraveled4);
-	}else if(centimetersTraveled2 < 0 && centimetersTraveled4 > 0){
-		MeasureTurn(centimetersTraveled1, centimetersTraveled2, centimetersTraveled3, centimetersTraveled4);
-	}else if(centimetersTraveled1 > 0 && centimetersTraveled3 < 0){
-		MeasureTurn(centimetersTraveled1, centimetersTraveled2, centimetersTraveled3, centimetersTraveled4);
-	}else if(centimetersTraveled2 > 0 && centimetersTraveled4 < 0){
 		MeasureTurn(centimetersTraveled1, centimetersTraveled2, centimetersTraveled3, centimetersTraveled4);
 	}else if(centimetersTraveled1 > 0 && centimetersTraveled2 > 0  && centimetersTraveled3 > 0 && centimetersTraveled4 > 0){ //TODO implement reasonable margin of error
 		//GET NEW POSITION OF EACH CORNER
