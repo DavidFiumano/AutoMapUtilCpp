@@ -151,6 +151,7 @@ Width->  *		     *
 	int main();
 	//eliminate upon completion of the project
 	AutoMap(int robotLength, int robotWidth, uint32_t encoderChannels[8]);
+	~AutoMap();
 	void MoveRobot(int time);
 	//Moves robot at certain speed for so and so seconds
 	void MoveRobotToPosition(int xPosMove, int yPosMove);
@@ -165,7 +166,6 @@ Width->  *		     *
 	//MUST BE RUN OUTSIDE OF PERIODIC
 	//only usable once
 	//if the robot is tilted to the side, then it shouldn't be included in the field state file
-
 	void createObjective(std::string name, int nameLength, int xPosOfUpperLeftCorner, int yPosOfUpperLeftCorner, int objectLength, int objectWidth, bool loadIntoFile, ObjectiveType); //must be called outside of periodic
 	bool checkTurn(); //checks if the robot turns
 	void moveTime(int time); //seconds

@@ -68,7 +68,7 @@ AutoMap::AutoMap(int robotLength, int robotWidth, uint32_t encoderChannels[8])
 	objectParsed = false;
 }
 
-virtual AutoMap::~AutoMap()
+AutoMap::~AutoMap()
 {
 	Objectives.clear();
 	Objectives.shrink_to_fit();
@@ -80,17 +80,6 @@ virtual AutoMap::~AutoMap()
 	delete encoder4;
 	delete[] robotPosition;
 	delete[] robotDimensions;
-	delete lengthDetermined;
-	delete robotIsTurning;
-	delete objectParsed;
-	delete encoder1ChannelA;
-	delete encoder1ChannelB;
-	delete encoder2ChannelA;
-	delete encoder2ChannelB;
-	delete encoder3ChannelA;
-	delete encoder3ChannelB;
-	delete encoder4ChannelA;
-	delete encoder4ChannelB;
 }
 
 void AutoMap::LoadInitialFieldState()
